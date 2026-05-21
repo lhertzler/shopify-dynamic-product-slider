@@ -1,0 +1,121 @@
+<div
+  class="dynamic-product-slider"
+  data-dynamic-product-slider
+  data-source="{{ block.settings.source | escape }}"
+  data-limit="{{ block.settings.products_to_show }}"
+  data-mobile-items="{{ block.settings.mobile_items }}"
+  data-tablet-items="{{ block.settings.tablet_items }}"
+  data-desktop-items="{{ block.settings.desktop_items }}"
+  {{ block.shopify_attributes }}
+>
+  <div class="dynamic-product-slider__inner">
+    {%- if block.settings.title != blank or block.settings.subtitle != blank -%}
+      <header class="dynamic-product-slider__header">
+        {%- if block.settings.title != blank -%}
+          <h2 class="dynamic-product-slider__title">{{ block.settings.title | escape }}</h2>
+        {%- endif -%}
+        {%- if block.settings.subtitle != blank -%}
+          <p class="dynamic-product-slider__subtitle">{{ block.settings.subtitle | escape }}</p>
+        {%- endif -%}
+      </header>
+    {%- endif -%}
+
+    <div class="dynamic-product-slider__status" role="status" aria-live="polite" data-dynamic-product-slider-status>
+      {{ 'dynamic_product_slider.loading' | t }}
+    </div>
+
+    <div class="dynamic-product-slider__viewport" data-dynamic-product-slider-viewport hidden>
+      <div class="dynamic-product-slider__track" data-dynamic-product-slider-track></div>
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Dynamic product slider",
+  "target": "section",
+  "stylesheet": "dynamic-product-slider.css",
+  "javascript": "dynamic-product-slider.js",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Title",
+      "default": "Featured products"
+    },
+    {
+      "type": "text",
+      "id": "subtitle",
+      "label": "Subtitle"
+    },
+    {
+      "type": "select",
+      "id": "source",
+      "label": "Source",
+      "options": [
+        {
+          "value": "recently_purchased",
+          "label": "Recently purchased products"
+        },
+        {
+          "value": "recently_viewed",
+          "label": "Recently viewed products"
+        },
+        {
+          "value": "recently_popular",
+          "label": "Recently popular products"
+        },
+        {
+          "value": "monthly_best_sellers",
+          "label": "Monthly best sellers"
+        },
+        {
+          "value": "random_products",
+          "label": "Random products"
+        },
+        {
+          "value": "manual",
+          "label": "Manual or placeholder"
+        }
+      ],
+      "default": "manual"
+    },
+    {
+      "type": "range",
+      "id": "products_to_show",
+      "label": "Products to show",
+      "min": 5,
+      "max": 15,
+      "step": 5,
+      "default": 15
+    },
+    {
+      "type": "range",
+      "id": "mobile_items",
+      "label": "Items on mobile",
+      "min": 1,
+      "max": 3,
+      "step": 1,
+      "default": 2
+    },
+    {
+      "type": "range",
+      "id": "tablet_items",
+      "label": "Items on tablet",
+      "min": 2,
+      "max": 4,
+      "step": 1,
+      "default": 3
+    },
+    {
+      "type": "range",
+      "id": "desktop_items",
+      "label": "Items on desktop",
+      "min": 3,
+      "max": 5,
+      "step": 1,
+      "default": 5
+    }
+  ]
+}
+{% endschema %}
