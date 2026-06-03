@@ -46,8 +46,12 @@ export default function Index() {
                     </Text>
                   </List.Item>
                   <List.Item>
-                    Current data source: placeholder response, ready for the
-                    future Admin API aggregation layer.
+                    Implemented sources: random products and recently purchased
+                    products, recently popular products, and monthly best
+                    sellers.
+                  </List.Item>
+                  <List.Item>
+                    Pending source: store-wide recently viewed.
                   </List.Item>
                 </List>
               </BlockStack>
@@ -60,8 +64,7 @@ export default function Index() {
                   Next build phase
                 </Text>
                 <Text as="p" variant="bodyMd">
-                  Add product aggregation jobs for recent purchases, popular
-                  products, monthly best sellers, random products, and store-wide
+                  Add storefront view tracking and aggregation for store-wide
                   recently viewed products.
                 </Text>
               </BlockStack>

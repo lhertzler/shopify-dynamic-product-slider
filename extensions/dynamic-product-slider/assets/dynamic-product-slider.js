@@ -22,7 +22,7 @@
   function buildProductCard(product) {
     var image = product.featured_image || product.image || "";
     var imageMarkup = image
-      ? '<img src="' + escapeHtml(image) + '" alt="' + escapeHtml(product.title || "") + '" loading="lazy">'
+      ? '<img src="' + escapeHtml(image) + '" alt="' + escapeHtml(product.image_alt || product.title || "") + '" loading="lazy">'
       : "";
 
     return (
