@@ -1,44 +1,33 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 
-interface StorefrontMoney {
+interface ShopifyMoney {
   amount: string;
   currencyCode: string;
 }
 
-interface StorefrontImage {
+interface ShopifyImage {
   url: string;
   altText: string | null;
-}
-
-interface StorefrontProduct {
-  id: string;
-  title: string;
-  handle: string;
-  onlineStoreUrl: string | null;
-  featuredImage: StorefrontImage | null;
-  priceRange: {
-    minVariantPrice: StorefrontMoney;
-  };
-}
-
-interface StorefrontProductsResponse {
-  data?: {
-    products?: {
-      nodes?: StorefrontProduct[];
-    };
-  };
-  errors?: Array<{ message: string }>;
 }
 
 interface AdminProduct {
   id: string;
   title: string;
   handle: string;
-  featuredImage: StorefrontImage | null;
+  featuredImage: ShopifyImage | null;
   priceRangeV2: {
-    minVariantPrice: StorefrontMoney;
+    minVariantPrice: ShopifyMoney;
   };
+}
+
+interface AdminProductsResponse {
+  data?: {
+    products?: {
+      nodes?: AdminProduct[];
+    };
+  };
+  errors?: Array<{ message: string }>;
 }
 
 interface AdminOrder {
@@ -93,27 +82,20 @@ const RECENTLY_PURCHASED_DAYS = 7;
 const RECENTLY_POPULAR_DAYS = 7;
 const MONTHLY_BEST_SELLER_DAYS = 30;
 const ORDER_POOL_SIZE = 100;
+const ADMIN_API_VERSION = "2026-04";
 
-interface GraphqlClient {
-  graphql: (
-    query: string,
-    options?: { variables?: Record<string, unknown> },
-  ) => Promise<Response>;
-}
-
-const RANDOM_PRODUCTS_QUERY = `#graphql
-  query RandomProducts($first: Int!) {
-    products(first: $first) {
+const PRODUCTS_QUERY = `#graphql
+  query DynamicSliderProducts($first: Int!) {
+    products(first: $first, query: "status:active") {
       nodes {
         id
         title
         handle
-        onlineStoreUrl
         featuredImage {
           url
           altText
         }
-        priceRange {
+        priceRangeV2 {
           minVariantPrice {
             amount
             currencyCode
@@ -154,6 +136,65 @@ const PURCHASED_PRODUCTS_QUERY = `#graphql
     }
   }
 `;
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Response(`${name} is not configured.`, { status: 500 });
+  }
+
+  return value;
+}
+
+function normalizeShopDomain(shop: string): string {
+  return shop.replace(/^https?:\/\//, "").replace(/\/.*$/, "").toLowerCase();
+}
+
+function assertAllowedShop(request: Request): void {
+  const configuredShop = process.env.SHOPIFY_SHOP_DOMAIN;
+
+  if (!configuredShop) {
+    return;
+  }
+
+  const requestShop = new URL(request.url).searchParams.get("shop");
+
+  if (!requestShop) {
+    throw new Response("Missing shop parameter.", { status: 400 });
+  }
+
+  if (normalizeShopDomain(requestShop) !== normalizeShopDomain(configuredShop)) {
+    throw new Response("Shop is not allowed.", { status: 403 });
+  }
+}
+
+async function adminGraphql<T>(
+  query: string,
+  variables?: Record<string, unknown>,
+): Promise<T> {
+  const shopDomain = normalizeShopDomain(requireEnv("SHOPIFY_SHOP_DOMAIN"));
+  const accessToken = requireEnv("SHOPIFY_ADMIN_ACCESS_TOKEN");
+  const response = await fetch(
+    `https://${shopDomain}/admin/api/${ADMIN_API_VERSION}/graphql.json`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Access-Token": accessToken,
+      },
+      body: JSON.stringify({ query, variables }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Response("Shopify Admin API request failed.", {
+      status: response.status,
+    });
+  }
+
+  return response.json() as Promise<T>;
+}
 
 function normalizeSource(value: string | null): ProductSource {
   if (value && SOURCES.has(value)) {
@@ -197,23 +238,6 @@ function shuffleProducts<T>(products: T[]): T[] {
   return shuffled;
 }
 
-function normalizeProduct(product: StorefrontProduct): DynamicSliderProduct {
-  const imageUrl = product.featuredImage?.url || "";
-  const minVariantPrice = product.priceRange.minVariantPrice;
-
-  return {
-    id: product.id,
-    title: product.title,
-    handle: product.handle,
-    url: product.onlineStoreUrl || `/products/${product.handle}`,
-    featured_image: imageUrl,
-    image: imageUrl,
-    image_alt: product.featuredImage?.altText || product.title,
-    price: toCents(minVariantPrice.amount),
-    currency_code: minVariantPrice.currencyCode,
-  };
-}
-
 function normalizeAdminProduct(product: AdminProduct): DynamicSliderProduct {
   const imageUrl = product.featuredImage?.url || "";
   const minVariantPrice = product.priceRangeV2.minVariantPrice;
@@ -238,25 +262,10 @@ function getOrderSearchQuery(days: number): string {
   return `processed_at:>=${start.toISOString()}`;
 }
 
-async function getRandomProducts({
-  storefront,
-  limit,
-}: {
-  storefront: GraphqlClient | undefined;
-  limit: number;
-}): Promise<DynamicSliderProduct[]> {
-  if (!storefront) {
-    throw new Response("Storefront context is unavailable for this shop.", {
-      status: 503,
-    });
-  }
-
-  const response = await storefront.graphql(RANDOM_PRODUCTS_QUERY, {
-    variables: {
-      first: RANDOM_PRODUCT_POOL_SIZE,
-    },
+async function getRandomProducts(limit: number): Promise<DynamicSliderProduct[]> {
+  const payload = await adminGraphql<AdminProductsResponse>(PRODUCTS_QUERY, {
+    first: RANDOM_PRODUCT_POOL_SIZE,
   });
-  const payload = (await response.json()) as StorefrontProductsResponse;
 
   if (payload.errors?.length) {
     throw new Response(payload.errors.map((error) => error.message).join("; "), {
@@ -266,29 +275,19 @@ async function getRandomProducts({
 
   const products = payload.data?.products?.nodes || [];
 
-  return shuffleProducts(products).slice(0, limit).map(normalizeProduct);
+  return shuffleProducts(products).slice(0, limit).map(normalizeAdminProduct);
 }
 
-async function getRecentlyPurchasedProducts({
-  admin,
-  limit,
-}: {
-  admin: GraphqlClient | undefined;
-  limit: number;
-}): Promise<DynamicSliderProduct[]> {
-  if (!admin) {
-    throw new Response("Admin context is unavailable for this shop.", {
-      status: 503,
-    });
-  }
-
-  const response = await admin.graphql(PURCHASED_PRODUCTS_QUERY, {
-    variables: {
+async function getRecentlyPurchasedProducts(
+  limit: number,
+): Promise<DynamicSliderProduct[]> {
+  const payload = await adminGraphql<AdminOrdersResponse>(
+    PURCHASED_PRODUCTS_QUERY,
+    {
       first: ORDER_POOL_SIZE,
       query: getOrderSearchQuery(RECENTLY_PURCHASED_DAYS),
     },
-  });
-  const payload = (await response.json()) as AdminOrdersResponse;
+  );
 
   if (payload.errors?.length) {
     throw new Response(payload.errors.map((error) => error.message).join("; "), {
@@ -319,27 +318,19 @@ async function getRecentlyPurchasedProducts({
 }
 
 async function getPopularPurchasedProducts({
-  admin,
   limit,
   days,
 }: {
-  admin: GraphqlClient | undefined;
   limit: number;
   days: number;
 }): Promise<DynamicSliderProduct[]> {
-  if (!admin) {
-    throw new Response("Admin context is unavailable for this shop.", {
-      status: 503,
-    });
-  }
-
-  const response = await admin.graphql(PURCHASED_PRODUCTS_QUERY, {
-    variables: {
+  const payload = await adminGraphql<AdminOrdersResponse>(
+    PURCHASED_PRODUCTS_QUERY,
+    {
       first: ORDER_POOL_SIZE,
       query: getOrderSearchQuery(days),
     },
-  });
-  const payload = (await response.json()) as AdminOrdersResponse;
+  );
 
   if (payload.errors?.length) {
     throw new Response(payload.errors.map((error) => error.message).join("; "), {
@@ -390,23 +381,24 @@ async function getPopularPurchasedProducts({
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin, storefront } = await authenticate.public.appProxy(request);
+  await authenticate.public.appProxy(request);
+  assertAllowedShop(request);
+
   const url = new URL(request.url);
   const source = normalizeSource(url.searchParams.get("source"));
   const limit = normalizeLimit(url.searchParams.get("limit"));
   let products: DynamicSliderProduct[] = [];
 
   if (source === "random_products") {
-    products = await getRandomProducts({ storefront, limit });
+    products = await getRandomProducts(limit);
   }
 
   if (source === "recently_purchased") {
-    products = await getRecentlyPurchasedProducts({ admin, limit });
+    products = await getRecentlyPurchasedProducts(limit);
   }
 
   if (source === "recently_popular") {
     products = await getPopularPurchasedProducts({
-      admin,
       limit,
       days: RECENTLY_POPULAR_DAYS,
     });
@@ -414,7 +406,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   if (source === "monthly_best_sellers") {
     products = await getPopularPurchasedProducts({
-      admin,
       limit,
       days: MONTHLY_BEST_SELLER_DAYS,
     });
