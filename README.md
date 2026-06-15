@@ -1,3 +1,56 @@
+# Dynamic Product Slider
+
+Single-merchant Shopify app for the Dwarven Forge storefront. The app provides a theme app extension section that renders dynamic homepage product lists through an app proxy endpoint.
+
+## Production Deployment Notes
+
+This app is configured for a one-store deployment, not Shopify App Store distribution.
+
+Required production services:
+
+- A hosted Remix app runtime, such as Vercel.
+- A Supabase Postgres database for Shopify session storage.
+- The Shopify app config and theme app extension deployed with Shopify CLI.
+
+Required environment variables:
+
+```shell
+SHOPIFY_API_KEY=97e19199c884c275aa234720c5ce8838
+SHOPIFY_API_SECRET=<client-secret-from-shopify>
+SHOPIFY_APP_URL=https://<deployed-app-domain>
+SHOPIFY_AUTH_CALLBACK_URL=https://<deployed-app-domain>/auth/callback
+SCOPES=read_orders,read_products,write_app_proxy
+DATABASE_URL=<supabase-postgres-connection-string>
+```
+
+Supabase setup:
+
+1. Create or use an existing Supabase project.
+2. Copy the Postgres connection string into `DATABASE_URL` in the hosting provider.
+3. Run `npm run setup` during deployment or run `prisma migrate deploy` once against the production database.
+
+Shopify setup:
+
+1. Replace `https://example.com` in `shopify.app.toml` with the deployed app URL, including the `/auth/callback` redirect URL.
+2. Set production env vars locally or in CI.
+3. Run `shopify app config validate --json`.
+4. Run `shopify app deploy`.
+5. Install or reauthorize the app on the target store.
+6. Add the `Dynamic product slider` app block to a draft theme in the theme editor.
+
+Implemented sources:
+
+- Random products
+- Recently purchased products
+- Recently popular products
+- Monthly best sellers
+
+Pending source:
+
+- Store-wide recently viewed products
+
+---
+
 # Shopify App Template - Remix
 
 > [!NOTE]

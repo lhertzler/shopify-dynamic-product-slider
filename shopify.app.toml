@@ -23,7 +23,7 @@ api_version = "2026-04"
   topics = [ "app/scopes_update" ]
 
 [auth]
-redirect_urls = [ ]
+redirect_urls = [ "https://example.com/auth/callback" ]
 
 [build]
 include_config_on_deploy = true
