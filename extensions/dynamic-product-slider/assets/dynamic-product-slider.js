@@ -74,6 +74,7 @@
     var viewport = root.querySelector("[data-dynamic-product-slider-viewport]");
     var track = root.querySelector("[data-dynamic-product-slider-track]");
     var status = root.querySelector("[data-dynamic-product-slider-status]");
+    var config = getConfig(root);
 
     if (!viewport || !track) {
       return;
@@ -85,6 +86,49 @@
     if (status) {
       status.hidden = true;
     }
+
+    initSlick(track, config, products.length);
+  }
+
+  function initSlick(track, config, productCount) {
+    if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.slick) {
+      return;
+    }
+
+    var $track = window.jQuery(track);
+
+    if ($track.hasClass("slick-initialized")) {
+      $track.slick("unslick");
+    }
+
+    if (productCount <= Number(config.desktopItems || 5)) {
+      return;
+    }
+
+    $track.slick({
+      arrows: true,
+      dots: true,
+      infinite: false,
+      slidesToShow: Number(config.desktopItems || 5),
+      slidesToScroll: Number(config.desktopItems || 5),
+      speed: 300,
+      responsive: [
+        {
+          breakpoint: 1024,
+          settings: {
+            slidesToShow: Number(config.tabletItems || 3),
+            slidesToScroll: Number(config.tabletItems || 3)
+          }
+        },
+        {
+          breakpoint: 750,
+          settings: {
+            slidesToShow: Number(config.mobileItems || 2),
+            slidesToScroll: Number(config.mobileItems || 2)
+          }
+        }
+      ]
+    });
   }
 
   function init(root) {
