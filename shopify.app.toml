@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "97e19199c884c275aa234720c5ce8838"
-application_url = "https://example.com"
+application_url = "https://shopify-dynamic-product-slider.vercel.app"
 embedded = true
 name = "Dynamic Product Slider"
 
@@ -23,7 +23,7 @@ api_version = "2026-04"
   topics = [ "app/scopes_update" ]
 
 [auth]
-redirect_urls = [ "https://example.com/auth/callback" ]
+redirect_urls = [ "https://shopify-dynamic-product-slider.vercel.app/auth/callback" ]
 
 [build]
 include_config_on_deploy = true
