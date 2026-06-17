@@ -43,6 +43,10 @@
   text-align: center;
 }
 
+.dynamic-product-slider__status[hidden] {
+  display: none;
+}
+
 .dynamic-product-slider__viewport[hidden] {
   display: none;
 }
