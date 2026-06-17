@@ -30,6 +30,19 @@ interface AdminProductsResponse {
   errors?: Array<{ message: string }>;
 }
 
+interface AdminCollectionProductsResponse {
+  data?: {
+    collectionByHandle?: {
+      id: string;
+      title: string;
+      products?: {
+        nodes?: AdminProduct[];
+      };
+    } | null;
+  };
+  errors?: Array<{ message: string }>;
+}
+
 interface AdminOrder {
   id: string;
   processedAt: string | null;
@@ -63,9 +76,9 @@ interface DynamicSliderProduct {
 }
 
 const SOURCE_VALUES = [
+  "featured",
   "recently_purchased",
   "recently_viewed",
-  "recently_popular",
   "monthly_best_sellers",
   "random_products",
   "manual",
@@ -78,8 +91,7 @@ const DEFAULT_SOURCE: ProductSource = "manual";
 const DEFAULT_LIMIT = 15;
 const MAX_LIMIT = 15;
 const RANDOM_PRODUCT_POOL_SIZE = 100;
-const RECENTLY_PURCHASED_DAYS = 7;
-const RECENTLY_POPULAR_DAYS = 7;
+const RECENTLY_PURCHASED_DAYS = 3;
 const MONTHLY_BEST_SELLER_DAYS = 30;
 const ORDER_POOL_SIZE = 100;
 const ADMIN_API_VERSION = "2026-04";
@@ -105,6 +117,33 @@ const PRODUCTS_QUERY = `#graphql
     }
   }
 `;
+
+const FEATURED_COLLECTION_PRODUCTS_QUERY = `#graphql
+  query FeaturedCollectionProducts($handle: String!, $first: Int!) {
+    collectionByHandle(handle: $handle) {
+      id
+      title
+      products(first: $first) {
+        nodes {
+          id
+          title
+          handle
+          featuredImage {
+            url
+            altText
+          }
+          priceRangeV2 {
+            minVariantPrice {
+              amount
+              currencyCode
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 
 const PURCHASED_PRODUCTS_QUERY = `#graphql
   query PurchasedProducts($first: Int!, $query: String!) {
@@ -278,6 +317,36 @@ async function getRandomProducts(limit: number): Promise<DynamicSliderProduct[]>
   return shuffleProducts(products).slice(0, limit).map(normalizeAdminProduct);
 }
 
+async function getFeaturedProducts({
+  collectionHandle,
+  limit,
+}: {
+  collectionHandle: string | null;
+  limit: number;
+}): Promise<DynamicSliderProduct[]> {
+  if (!collectionHandle) {
+    return [];
+  }
+
+  const payload = await adminGraphql<AdminCollectionProductsResponse>(
+    FEATURED_COLLECTION_PRODUCTS_QUERY,
+    {
+      handle: collectionHandle,
+      first: RANDOM_PRODUCT_POOL_SIZE,
+    },
+  );
+
+  if (payload.errors?.length) {
+    throw new Response(payload.errors.map((error) => error.message).join("; "), {
+      status: 502,
+    });
+  }
+
+  const products = payload.data?.collectionByHandle?.products?.nodes || [];
+
+  return shuffleProducts(products).slice(0, limit).map(normalizeAdminProduct);
+}
+
 async function getRecentlyPurchasedProducts(
   limit: number,
 ): Promise<DynamicSliderProduct[]> {
@@ -341,7 +410,7 @@ async function getPopularPurchasedProducts({
   const orders = payload.data?.orders?.nodes || [];
   const productsById = new Map<
     string,
-    { product: AdminProduct; quantity: number; firstSeenIndex: number }
+    { product: AdminProduct; purchases: number; firstSeenIndex: number }
   >();
   let seenIndex = 0;
 
@@ -356,11 +425,11 @@ async function getPopularPurchasedProducts({
       const existing = productsById.get(product.id);
 
       if (existing) {
-        existing.quantity += lineItem.quantity;
+        existing.purchases += 1;
       } else {
         productsById.set(product.id, {
           product,
-          quantity: lineItem.quantity,
+          purchases: 1,
           firstSeenIndex: seenIndex,
         });
         seenIndex += 1;
@@ -370,8 +439,8 @@ async function getPopularPurchasedProducts({
 
   return Array.from(productsById.values())
     .sort((a, b) => {
-      if (b.quantity !== a.quantity) {
-        return b.quantity - a.quantity;
+      if (b.purchases !== a.purchases) {
+        return b.purchases - a.purchases;
       }
 
       return a.firstSeenIndex - b.firstSeenIndex;
@@ -387,7 +456,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const source = normalizeSource(url.searchParams.get("source"));
   const limit = normalizeLimit(url.searchParams.get("limit"));
+  const collectionHandle = url.searchParams.get("collection");
   let products: DynamicSliderProduct[] = [];
+
+  if (source === "featured") {
+    products = await getFeaturedProducts({ collectionHandle, limit });
+  }
 
   if (source === "random_products") {
     products = await getRandomProducts(limit);
@@ -395,13 +469,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   if (source === "recently_purchased") {
     products = await getRecentlyPurchasedProducts(limit);
-  }
-
-  if (source === "recently_popular") {
-    products = await getPopularPurchasedProducts({
-      limit,
-      days: RECENTLY_POPULAR_DAYS,
-    });
   }
 
   if (source === "monthly_best_sellers") {

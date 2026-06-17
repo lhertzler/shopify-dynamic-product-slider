@@ -18,28 +18,40 @@ export default function Index() {
             <Card>
               <BlockStack gap="400">
                 <Text as="h2" variant="headingMd">
-                  App ready
+                  Dynamic Product Slider Sources
                 </Text>
                 <List>
                   <List.Item>
-                    Theme app extension:{" "}
                     <Text as="span" fontWeight="semibold">
-                      extensions/dynamic-product-slider
+                      Featured collection:
                     </Text>
+                    Pulls products from the collection selected in the theme
+                    editor, shuffles them on each request, and returns the
+                    configured number of products.
                   </List.Item>
                   <List.Item>
-                    Storefront endpoint:{" "}
                     <Text as="span" fontWeight="semibold">
-                      /apps/dynamic-product-slider/products
+                      Monthly best sellers:
                     </Text>
+                    Looks at orders processed in the last 30 days, counts each
+                    line item as one purchase regardless of quantity, and returns
+                    the products with the most purchase occurrences first.
                   </List.Item>
                   <List.Item>
-                    Implemented sources: random products and recently purchased
-                    products, recently popular products, and monthly best
-                    sellers.
+                    <Text as="span" fontWeight="semibold">
+                      Recently purchased products:
+                    </Text>
+                    Looks at orders processed in the last 3 days, sorted newest
+                    first, and returns unique products in most-recent purchase
+                    order.
                   </List.Item>
                   <List.Item>
-                    Pending source: store-wide recently viewed.
+                    <Text as="span" fontWeight="semibold">
+                      Random products:
+                    </Text>
+                    Pulls up to 100 active products from Shopify, shuffles them
+                    on each request, and returns the configured number of
+                    products.
                   </List.Item>
                 </List>
               </BlockStack>

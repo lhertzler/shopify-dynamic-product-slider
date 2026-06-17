@@ -32,6 +32,56 @@
   color: var(--dynamic-product-slider-muted);
 }
 
+.dynamic-product-slider__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.7rem 1.5rem;
+  margin: 0 0 1.75rem;
+}
+
+.dynamic-product-slider__tab {
+  position: relative;
+  padding: 0.25rem 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--dynamic-product-slider-muted);
+  cursor: pointer;
+  font-family: var(--dynamic-product-slider-font);
+  font-size: 17px;
+  line-height: 1.3;
+  transition: color 0.2s ease;
+}
+
+.dynamic-product-slider__tab::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -0.2rem;
+  left: 0;
+  height: 2px;
+  transform: scaleX(0);
+  transform-origin: center;
+  background: var(--dynamic-product-slider-accent);
+  transition: transform 0.2s ease;
+}
+
+.dynamic-product-slider__tab:hover,
+.dynamic-product-slider__tab:focus-visible,
+.dynamic-product-slider__tab.is-active {
+  color: #fafafa;
+}
+
+.dynamic-product-slider__tab.is-active::after {
+  transform: scaleX(1);
+}
+
+.dynamic-product-slider__tab:focus-visible {
+  outline: 2px solid var(--dynamic-product-slider-accent);
+  outline-offset: 4px;
+}
+
 .dynamic-product-slider__viewport[hidden] {
   display: none;
 }
@@ -83,16 +133,24 @@
   margin: 0;
   color: #fafafa;
   font-family: var(--dynamic-product-slider-font);
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 400;
-  line-height: 1.35;
+  line-height: 1.25;
 }
 
 .dynamic-product-slider__card-price {
   color: #ffcb3b;
   font-family: var(--dynamic-product-slider-font);
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.25;
+}
+
+.dynamic-product-slider__empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 2rem 0;
+  color: var(--dynamic-product-slider-muted);
+  text-align: center;
 }
 
 .dynamic-product-slider__card--skeleton {
@@ -145,6 +203,10 @@
 
 .dynamic-product-slider__track.slick-initialized .slick-list {
   margin: 0 -11px;
+  border: 1px solid #3c3c3c;
+  border-radius: 15px;
+  background: #1d1d1d;
+  padding: 22px 10px 22px;
 }
 
 .dynamic-product-slider .slick-prev,

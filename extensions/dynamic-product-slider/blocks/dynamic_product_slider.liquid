@@ -1,8 +1,27 @@
+{%- liquid
+  assign initial_source = ''
+
+  if block.settings.enable_featured
+    assign initial_source = 'featured'
+  elsif block.settings.enable_random_products
+    assign initial_source = 'random_products'
+  elsif block.settings.enable_recently_purchased
+    assign initial_source = 'recently_purchased'
+  elsif block.settings.enable_monthly_best_sellers
+    assign initial_source = 'monthly_best_sellers'
+  endif
+
+  if initial_source == ''
+    assign initial_source = 'manual'
+  endif
+-%}
+
 <div
   class="dynamic-product-slider"
   data-dynamic-product-slider
-  data-source="{{ block.settings.source | escape }}"
+  data-initial-source="{{ initial_source | escape }}"
   data-limit="{{ block.settings.products_to_show }}"
+  data-featured-collection="{% if block.settings.featured_collection != blank %}{{ block.settings.featured_collection.handle | escape }}{% endif %}"
   data-mobile-items="{{ block.settings.mobile_items }}"
   data-tablet-items="{{ block.settings.tablet_items }}"
   data-desktop-items="{{ block.settings.desktop_items }}"
@@ -19,6 +38,56 @@
         {%- endif -%}
       </header>
     {%- endif -%}
+
+    <div class="dynamic-product-slider__tabs" role="tablist" aria-label="Product sources" data-dynamic-product-slider-tabs>
+      {%- if block.settings.enable_featured -%}
+        <button
+          type="button"
+          class="dynamic-product-slider__tab{% if initial_source == 'featured' %} is-active{% endif %}"
+          role="tab"
+          aria-selected="{% if initial_source == 'featured' %}true{% else %}false{% endif %}"
+          data-dynamic-product-slider-tab="featured"
+        >
+          Featured
+        </button>
+      {%- endif -%}
+
+      {%- if block.settings.enable_random_products -%}
+        <button
+          type="button"
+          class="dynamic-product-slider__tab{% if initial_source == 'random_products' %} is-active{% endif %}"
+          role="tab"
+          aria-selected="{% if initial_source == 'random_products' %}true{% else %}false{% endif %}"
+          data-dynamic-product-slider-tab="random_products"
+        >
+          Random products
+        </button>
+      {%- endif -%}
+
+      {%- if block.settings.enable_recently_purchased -%}
+        <button
+          type="button"
+          class="dynamic-product-slider__tab{% if initial_source == 'recently_purchased' %} is-active{% endif %}"
+          role="tab"
+          aria-selected="{% if initial_source == 'recently_purchased' %}true{% else %}false{% endif %}"
+          data-dynamic-product-slider-tab="recently_purchased"
+        >
+          Recently purchased
+        </button>
+      {%- endif -%}
+
+      {%- if block.settings.enable_monthly_best_sellers -%}
+        <button
+          type="button"
+          class="dynamic-product-slider__tab{% if initial_source == 'monthly_best_sellers' %} is-active{% endif %}"
+          role="tab"
+          aria-selected="{% if initial_source == 'monthly_best_sellers' %}true{% else %}false{% endif %}"
+          data-dynamic-product-slider-tab="monthly_best_sellers"
+        >
+          Monthly best sellers
+        </button>
+      {%- endif -%}
+    </div>
 
     <div class="dynamic-product-slider__viewport" data-dynamic-product-slider-viewport>
       <div
@@ -59,36 +128,41 @@
       "label": "Subtitle"
     },
     {
-      "type": "select",
-      "id": "source",
-      "label": "Source",
-      "options": [
-        {
-          "value": "recently_purchased",
-          "label": "Recently purchased products"
-        },
-        {
-          "value": "recently_viewed",
-          "label": "Recently viewed products"
-        },
-        {
-          "value": "recently_popular",
-          "label": "Recently popular products"
-        },
-        {
-          "value": "monthly_best_sellers",
-          "label": "Monthly best sellers"
-        },
-        {
-          "value": "random_products",
-          "label": "Random products"
-        },
-        {
-          "value": "manual",
-          "label": "Manual or placeholder"
-        }
-      ],
-      "default": "manual"
+      "type": "header",
+      "content": "Sources"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_featured",
+      "label": "Enable featured collection",
+      "default": false
+    },
+    {
+      "type": "collection",
+      "id": "featured_collection",
+      "label": "Featured collection"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_random_products",
+      "label": "Enable random products",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_recently_purchased",
+      "label": "Enable recently purchased products",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_monthly_best_sellers",
+      "label": "Enable monthly best sellers",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Layout"
     },
     {
       "type": "range",

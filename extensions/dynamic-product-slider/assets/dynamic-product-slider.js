@@ -46,10 +46,23 @@
     );
   }
 
+  function buildSkeletonCard() {
+    return (
+      '<article class="dynamic-product-slider__card dynamic-product-slider__card--skeleton">' +
+      '<div class="dynamic-product-slider__card-image dynamic-product-slider__skeleton"></div>' +
+      '<div class="dynamic-product-slider__card-meta">' +
+      '<div class="dynamic-product-slider__skeleton dynamic-product-slider__skeleton-title"></div>' +
+      '<div class="dynamic-product-slider__skeleton dynamic-product-slider__skeleton-price"></div>' +
+      "</div>" +
+      "</article>"
+    );
+  }
+
   function getConfig(root) {
     return {
-      source: root.getAttribute("data-source") || "manual",
+      initialSource: root.getAttribute("data-initial-source") || "manual",
       limit: root.getAttribute("data-limit") || "15",
+      featuredCollection: root.getAttribute("data-featured-collection") || "",
       mobileItems: root.getAttribute("data-mobile-items") || "2",
       tabletItems: root.getAttribute("data-tablet-items") || "3",
       desktopItems: root.getAttribute("data-desktop-items") || "5"
@@ -62,6 +75,52 @@
     root.style.setProperty("--dynamic-product-slider-desktop-items", config.desktopItems);
   }
 
+  function unslick(track) {
+    if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.slick) {
+      return;
+    }
+
+    var $track = window.jQuery(track);
+
+    if ($track.hasClass("slick-initialized")) {
+      $track.slick("unslick");
+    }
+  }
+
+  function renderSkeleton(root) {
+    var track = root.querySelector("[data-dynamic-product-slider-track]");
+    var config = getConfig(root);
+    var count = Number(config.limit || 15);
+    var skeletons = [];
+
+    if (!track) {
+      return;
+    }
+
+    unslick(track);
+
+    for (var index = 0; index < count; index += 1) {
+      skeletons.push(buildSkeletonCard());
+    }
+
+    track.innerHTML = skeletons.join("");
+    track.classList.add("dynamic-product-slider__track--skeleton");
+    track.setAttribute("aria-hidden", "true");
+  }
+
+  function renderEmpty(root) {
+    var track = root.querySelector("[data-dynamic-product-slider-track]");
+
+    if (!track) {
+      return;
+    }
+
+    unslick(track);
+    track.innerHTML = '<p class="dynamic-product-slider__empty">No products returned for this source yet.</p>';
+    track.classList.remove("dynamic-product-slider__track--skeleton");
+    track.removeAttribute("aria-hidden");
+  }
+
   function renderProducts(root, products) {
     var viewport = root.querySelector("[data-dynamic-product-slider-viewport]");
     var track = root.querySelector("[data-dynamic-product-slider-track]");
@@ -71,6 +130,7 @@
       return;
     }
 
+    unslick(track);
     track.innerHTML = products.map(buildProductCard).join("");
     track.classList.remove("dynamic-product-slider__track--skeleton");
     track.removeAttribute("aria-hidden");
@@ -120,19 +180,45 @@
     });
   }
 
-  function init(root) {
-    if (!root || root.getAttribute("data-dynamic-product-slider-ready") === "true") {
+  function getSourceCacheKey(config, source) {
+    if (source === "featured") {
+      return source + ":" + config.featuredCollection;
+    }
+
+    return source;
+  }
+
+  function setActiveTab(root, source) {
+    var tabs = root.querySelectorAll("[data-dynamic-product-slider-tab]");
+
+    tabs.forEach(function (tab) {
+      var isActive = tab.getAttribute("data-dynamic-product-slider-tab") === source;
+      tab.classList.toggle("is-active", isActive);
+      tab.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+  }
+
+  function loadSource(root, source) {
+    var config = getConfig(root);
+    var cacheKey = getSourceCacheKey(config, source);
+    var cached = root._dynamicProductSliderCache && root._dynamicProductSliderCache[cacheKey];
+    var endpoint = new URL(ENDPOINT_PATH, window.location.origin);
+
+    setActiveTab(root, source);
+    root.setAttribute("data-active-source", source);
+
+    if (cached) {
+      renderProducts(root, cached);
       return;
     }
 
-    root.setAttribute("data-dynamic-product-slider-ready", "true");
+    renderSkeleton(root);
 
-    var config = getConfig(root);
-    var endpoint = new URL(ENDPOINT_PATH, window.location.origin);
-    endpoint.searchParams.set("source", config.source);
+    endpoint.searchParams.set("source", source);
     endpoint.searchParams.set("limit", config.limit);
-
-    setGridVars(root, config);
+    if (source === "featured" && config.featuredCollection) {
+      endpoint.searchParams.set("collection", config.featuredCollection);
+    }
 
     fetch(endpoint.toString(), { credentials: "same-origin" })
       .then(function (response) {
@@ -147,14 +233,49 @@
 
         if (!products.length) {
           root.setAttribute("data-dynamic-product-slider-empty", "true");
+          renderEmpty(root);
           return;
         }
 
+        root._dynamicProductSliderCache = root._dynamicProductSliderCache || {};
+        root._dynamicProductSliderCache[cacheKey] = products;
+        root.removeAttribute("data-dynamic-product-slider-empty");
+        root.removeAttribute("data-dynamic-product-slider-error");
         renderProducts(root, products);
       })
       .catch(function () {
         root.setAttribute("data-dynamic-product-slider-error", "true");
+        renderEmpty(root);
       });
+  }
+
+  function bindTabs(root) {
+    var tabs = root.querySelectorAll("[data-dynamic-product-slider-tab]");
+
+    tabs.forEach(function (tab) {
+      if (tab.getAttribute("data-dynamic-product-slider-tab-bound") === "true") {
+        return;
+      }
+
+      tab.setAttribute("data-dynamic-product-slider-tab-bound", "true");
+      tab.addEventListener("click", function () {
+        var source = tab.getAttribute("data-dynamic-product-slider-tab") || "manual";
+        loadSource(root, source);
+      });
+    });
+  }
+
+  function init(root) {
+    if (!root || root.getAttribute("data-dynamic-product-slider-ready") === "true") {
+      return;
+    }
+
+    root.setAttribute("data-dynamic-product-slider-ready", "true");
+
+    var config = getConfig(root);
+    setGridVars(root, config);
+    bindTabs(root);
+    loadSource(root, config.initialSource);
   }
 
   function initAll() {

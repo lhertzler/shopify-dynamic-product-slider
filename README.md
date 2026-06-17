@@ -15,8 +15,8 @@ This is not intended for Shopify App Store distribution.
 ## Implemented Sources
 
 - Random products
+- Featured collection
 - Recently purchased products
-- Recently popular products
 - Monthly best sellers
 
 ## Pending Source
