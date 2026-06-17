@@ -62,18 +62,9 @@
     root.style.setProperty("--dynamic-product-slider-desktop-items", config.desktopItems);
   }
 
-  function setStatus(root, message) {
-    var status = root.querySelector("[data-dynamic-product-slider-status]");
-    if (status) {
-      status.textContent = message;
-      status.hidden = false;
-    }
-  }
-
   function renderProducts(root, products) {
     var viewport = root.querySelector("[data-dynamic-product-slider-viewport]");
     var track = root.querySelector("[data-dynamic-product-slider-track]");
-    var status = root.querySelector("[data-dynamic-product-slider-status]");
     var config = getConfig(root);
 
     if (!viewport || !track) {
@@ -81,11 +72,9 @@
     }
 
     track.innerHTML = products.map(buildProductCard).join("");
+    track.classList.remove("dynamic-product-slider__track--skeleton");
+    track.removeAttribute("aria-hidden");
     viewport.hidden = false;
-
-    if (status) {
-      status.hidden = true;
-    }
 
     initSlick(track, config, products.length);
   }
@@ -157,14 +146,14 @@
         var products = Array.isArray(payload.products) ? payload.products : [];
 
         if (!products.length) {
-          setStatus(root, payload.message || "No products returned for this source yet.");
+          root.setAttribute("data-dynamic-product-slider-empty", "true");
           return;
         }
 
         renderProducts(root, products);
       })
       .catch(function () {
-        setStatus(root, "Dynamic products are unavailable right now.");
+        root.setAttribute("data-dynamic-product-slider-error", "true");
       });
   }
 
