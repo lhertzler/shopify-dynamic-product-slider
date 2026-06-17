@@ -87,10 +87,22 @@
     }
   }
 
+  function getItemsForCurrentViewport(config) {
+    if (window.innerWidth < 750) {
+      return Number(config.mobileItems || 2);
+    }
+
+    if (window.innerWidth < 1024) {
+      return Number(config.tabletItems || 3);
+    }
+
+    return Number(config.desktopItems || 5);
+  }
+
   function renderSkeleton(root) {
     var track = root.querySelector("[data-dynamic-product-slider-track]");
     var config = getConfig(root);
-    var count = Number(config.limit || 15);
+    var count = Math.max(1, getItemsForCurrentViewport(config));
     var skeletons = [];
 
     if (!track) {

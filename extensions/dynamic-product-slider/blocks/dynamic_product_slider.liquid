@@ -91,20 +91,9 @@
 
     <div class="dynamic-product-slider__viewport" data-dynamic-product-slider-viewport>
       <div
-        class="dynamic-product-slider__track dynamic-product-slider__track--skeleton"
-        aria-hidden="true"
+        class="dynamic-product-slider__track"
         data-dynamic-product-slider-track
-      >
-        {%- for index in (1..block.settings.products_to_show) -%}
-          <article class="dynamic-product-slider__card dynamic-product-slider__card--skeleton">
-            <div class="dynamic-product-slider__card-image dynamic-product-slider__skeleton"></div>
-            <div class="dynamic-product-slider__card-meta">
-              <div class="dynamic-product-slider__skeleton dynamic-product-slider__skeleton-title"></div>
-              <div class="dynamic-product-slider__skeleton dynamic-product-slider__skeleton-price"></div>
-            </div>
-          </article>
-        {%- endfor -%}
-      </div>
+      ></div>
     </div>
   </div>
 </div>
