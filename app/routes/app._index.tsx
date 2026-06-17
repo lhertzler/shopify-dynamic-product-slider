@@ -18,11 +18,7 @@ export default function Index() {
             <Card>
               <BlockStack gap="400">
                 <Text as="h2" variant="headingMd">
-                  App foundation is ready
-                </Text>
-                <Text as="p" variant="bodyMd">
-                  This app now owns the storefront block and the app proxy route
-                  that will power the dynamic homepage product slider.
+                  App ready
                 </Text>
                 <List>
                   <List.Item>
@@ -53,11 +49,10 @@ export default function Index() {
             <Card>
               <BlockStack gap="300">
                 <Text as="h2" variant="headingMd">
-                  Next build phase
+                  Dynamic Product Slider
                 </Text>
                 <Text as="p" variant="bodyMd">
-                  Add storefront view tracking and aggregation for store-wide
-                  recently viewed products.
+                  Created by Luke Hertzler.
                 </Text>
               </BlockStack>
             </Card>
