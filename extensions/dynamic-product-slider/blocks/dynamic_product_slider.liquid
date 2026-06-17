@@ -52,15 +52,15 @@
         </button>
       {%- endif -%}
 
-      {%- if block.settings.enable_random_products -%}
+      {%- if block.settings.enable_monthly_best_sellers -%}
         <button
           type="button"
-          class="dynamic-product-slider__tab{% if initial_source == 'random_products' %} is-active{% endif %}"
+          class="dynamic-product-slider__tab{% if initial_source == 'monthly_best_sellers' %} is-active{% endif %}"
           role="tab"
-          aria-selected="{% if initial_source == 'random_products' %}true{% else %}false{% endif %}"
-          data-dynamic-product-slider-tab="random_products"
+          aria-selected="{% if initial_source == 'monthly_best_sellers' %}true{% else %}false{% endif %}"
+          data-dynamic-product-slider-tab="monthly_best_sellers"
         >
-          Random products
+          Recent Best Sellers
         </button>
       {%- endif -%}
 
@@ -72,21 +72,22 @@
           aria-selected="{% if initial_source == 'recently_purchased' %}true{% else %}false{% endif %}"
           data-dynamic-product-slider-tab="recently_purchased"
         >
-          Recently purchased
+          Just Purchased
         </button>
       {%- endif -%}
 
-      {%- if block.settings.enable_monthly_best_sellers -%}
+      {%- if block.settings.enable_random_products -%}
         <button
           type="button"
-          class="dynamic-product-slider__tab{% if initial_source == 'monthly_best_sellers' %} is-active{% endif %}"
+          class="dynamic-product-slider__tab{% if initial_source == 'random_products' %} is-active{% endif %}"
           role="tab"
-          aria-selected="{% if initial_source == 'monthly_best_sellers' %}true{% else %}false{% endif %}"
-          data-dynamic-product-slider-tab="monthly_best_sellers"
+          aria-selected="{% if initial_source == 'random_products' %}true{% else %}false{% endif %}"
+          data-dynamic-product-slider-tab="random_products"
         >
-          Monthly best sellers
+          Random
         </button>
       {%- endif -%}
+
     </div>
 
     <div class="dynamic-product-slider__viewport" data-dynamic-product-slider-viewport>

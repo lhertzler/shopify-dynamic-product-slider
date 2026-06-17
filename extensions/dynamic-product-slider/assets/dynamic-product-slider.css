@@ -35,18 +35,18 @@
 .dynamic-product-slider__tabs {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.7rem 1.5rem;
   margin: 0 0 1.75rem;
 }
 
 .dynamic-product-slider__tab {
   position: relative;
-  padding: 8px 22px 8px 8px;
+  padding: 14px 23px;
   border: 1px solid #3c3c3c;
-  border-radius: 15px;
+  border-radius: 50px;
   background: #1d1d1d;
-  color: var(--dynamic-product-slider-muted);
+  color: #fafafa;
   cursor: pointer;
   font-family: var(--dynamic-product-slider-font);
   font-size: 18px;
@@ -59,7 +59,8 @@
 .dynamic-product-slider__tab:focus-visible,
 .dynamic-product-slider__tab.is-active {
   color: #fafafa;
-  background: rgba(255, 203, 59, 0.82);
+  background: rgba(255, 203, 59, 0.25);
+  border-color: #ffcb3b;
 }
 
 .dynamic-product-slider__tab:focus-visible {
@@ -191,7 +192,7 @@
   border: 1px solid #3c3c3c;
   border-radius: 15px;
   background: #1d1d1d;
-  padding: 22px 10px 22px;
+  padding: 30px 10px 22px;
 }
 
 .dynamic-product-slider .slick-prev,
@@ -256,7 +257,7 @@
 
 @media screen and (max-width: 749px) {
   .dynamic-product-slider__inner {
-    padding: 2rem 18px;
+    padding: 0 10px;
   }
 
   .dynamic-product-slider .slick-prev {
