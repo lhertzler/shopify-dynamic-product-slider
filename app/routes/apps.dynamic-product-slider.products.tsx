@@ -15,6 +15,7 @@ interface AdminProduct {
   id: string;
   title: string;
   handle: string;
+  tags: string[];
   featuredImage: ShopifyImage | null;
   priceRangeV2: {
     minVariantPrice: ShopifyMoney;
@@ -95,6 +96,14 @@ const RECENTLY_PURCHASED_DAYS = 3;
 const MONTHLY_BEST_SELLER_DAYS = 30;
 const ORDER_POOL_SIZE = 100;
 const ADMIN_API_VERSION = "2026-04";
+const EXCLUDED_PRODUCT_LEGACY_IDS = new Set([
+  "7042936307815",
+  "15044461691249",
+  "15452834529649",
+  "15290252558705",
+  "15486762025329",
+]);
+const EXCLUDED_PRODUCT_TAG = "hidden from search";
 
 const PRODUCTS_QUERY = `#graphql
   query DynamicSliderProducts($first: Int!) {
@@ -103,6 +112,7 @@ const PRODUCTS_QUERY = `#graphql
         id
         title
         handle
+        tags
         featuredImage {
           url
           altText
@@ -128,6 +138,7 @@ const FEATURED_COLLECTION_PRODUCTS_QUERY = `#graphql
           id
           title
           handle
+          tags
           featuredImage {
             url
             altText
@@ -158,6 +169,7 @@ const PURCHASED_PRODUCTS_QUERY = `#graphql
               id
               title
               handle
+              tags
               featuredImage {
                 url
                 altText
@@ -277,6 +289,26 @@ function shuffleProducts<T>(products: T[]): T[] {
   return shuffled;
 }
 
+function getLegacyProductId(product: AdminProduct): string {
+  return product.id.split("/").pop() || product.id;
+}
+
+function isExcludedProduct(product: AdminProduct): boolean {
+  const legacyId = getLegacyProductId(product);
+
+  if (EXCLUDED_PRODUCT_LEGACY_IDS.has(legacyId)) {
+    return true;
+  }
+
+  return product.tags.some(
+    (tag) => tag.trim().toLowerCase() === EXCLUDED_PRODUCT_TAG,
+  );
+}
+
+function filterEligibleProducts(products: AdminProduct[]): AdminProduct[] {
+  return products.filter((product) => !isExcludedProduct(product));
+}
+
 function normalizeAdminProduct(product: AdminProduct): DynamicSliderProduct {
   const imageUrl = product.featuredImage?.url || "";
   const minVariantPrice = product.priceRangeV2.minVariantPrice;
@@ -314,7 +346,9 @@ async function getRandomProducts(limit: number): Promise<DynamicSliderProduct[]>
 
   const products = payload.data?.products?.nodes || [];
 
-  return shuffleProducts(products).slice(0, limit).map(normalizeAdminProduct);
+  return shuffleProducts(filterEligibleProducts(products))
+    .slice(0, limit)
+    .map(normalizeAdminProduct);
 }
 
 async function getFeaturedProducts({
@@ -344,7 +378,9 @@ async function getFeaturedProducts({
 
   const products = payload.data?.collectionByHandle?.products?.nodes || [];
 
-  return shuffleProducts(products).slice(0, limit).map(normalizeAdminProduct);
+  return shuffleProducts(filterEligibleProducts(products))
+    .slice(0, limit)
+    .map(normalizeAdminProduct);
 }
 
 async function getRecentlyPurchasedProducts(
@@ -371,7 +407,7 @@ async function getRecentlyPurchasedProducts(
     for (const lineItem of order.lineItems.nodes || []) {
       const product = lineItem.product;
 
-      if (!product || productsById.has(product.id)) {
+      if (!product || isExcludedProduct(product) || productsById.has(product.id)) {
         continue;
       }
 
@@ -418,7 +454,7 @@ async function getPopularPurchasedProducts({
     for (const lineItem of order.lineItems.nodes || []) {
       const product = lineItem.product;
 
-      if (!product) {
+      if (!product || isExcludedProduct(product)) {
         continue;
       }
 
