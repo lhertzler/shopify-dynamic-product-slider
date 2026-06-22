@@ -1,5 +1,6 @@
 (function () {
   var ENDPOINT_PATH = "/apps/dynamic-product-slider/products";
+  var RECENTLY_PURCHASED_CACHE_TTL = 5 * 60 * 1000;
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -146,7 +147,6 @@
     track.innerHTML = products.map(buildProductCard).join("");
     track.classList.remove("dynamic-product-slider__track--skeleton");
     track.removeAttribute("aria-hidden");
-    viewport.hidden = false;
 
     initSlick(track, config, products.length);
   }
@@ -200,6 +200,25 @@
     return source;
   }
 
+  function getSourceCacheTtl(source) {
+    return source === "recently_purchased" ? RECENTLY_PURCHASED_CACHE_TTL : source === "random_products" ? 0 : Number.POSITIVE_INFINITY;
+  }
+
+  function getCachedProducts(root, cacheKey) {
+    var cached = root._dynamicProductSliderCache && root._dynamicProductSliderCache[cacheKey];
+
+    if (!cached) {
+      return null;
+    }
+
+    if (cached.expiresAt <= Date.now()) {
+      delete root._dynamicProductSliderCache[cacheKey];
+      return null;
+    }
+
+    return cached.products;
+  }
+
   function setActiveTab(root, source) {
     var tabs = root.querySelectorAll("[data-dynamic-product-slider-tab]");
 
@@ -213,12 +232,11 @@
   function loadSource(root, source) {
     var config = getConfig(root);
     var cacheKey = getSourceCacheKey(config, source);
-    var cached = root._dynamicProductSliderCache && root._dynamicProductSliderCache[cacheKey];
+    var cacheTtl = getSourceCacheTtl(source);
+    var cached = cacheTtl > 0 ? getCachedProducts(root, cacheKey) : null;
     var endpoint = new URL(ENDPOINT_PATH, window.location.origin);
 
     setActiveTab(root, source);
-    root.setAttribute("data-active-source", source);
-
     if (cached) {
       renderProducts(root, cached);
       return;
@@ -228,6 +246,9 @@
 
     endpoint.searchParams.set("source", source);
     endpoint.searchParams.set("limit", config.limit);
+    if (source === "random_products") {
+      endpoint.searchParams.set("_", String(Date.now()));
+    }
     if (source === "featured" && config.featuredCollection) {
       endpoint.searchParams.set("collection", config.featuredCollection);
     }
@@ -235,7 +256,7 @@
     fetch(endpoint.toString(), { credentials: "same-origin" })
       .then(function (response) {
         if (!response.ok) {
-          throw new Error("Dynamic product source failed");
+          throw new Error("Source failed");
         }
 
         return response.json();
@@ -244,19 +265,20 @@
         var products = Array.isArray(payload.products) ? payload.products : [];
 
         if (!products.length) {
-          root.setAttribute("data-dynamic-product-slider-empty", "true");
           renderEmpty(root);
           return;
         }
 
-        root._dynamicProductSliderCache = root._dynamicProductSliderCache || {};
-        root._dynamicProductSliderCache[cacheKey] = products;
-        root.removeAttribute("data-dynamic-product-slider-empty");
-        root.removeAttribute("data-dynamic-product-slider-error");
+        if (cacheTtl > 0) {
+          root._dynamicProductSliderCache = root._dynamicProductSliderCache || {};
+          root._dynamicProductSliderCache[cacheKey] = {
+            products: products,
+            expiresAt: Date.now() + cacheTtl
+          };
+        }
         renderProducts(root, products);
       })
       .catch(function () {
-        root.setAttribute("data-dynamic-product-slider-error", "true");
         renderEmpty(root);
       });
   }

@@ -105,6 +105,18 @@ const EXCLUDED_PRODUCT_LEGACY_IDS = new Set([
 ]);
 const EXCLUDED_PRODUCT_TAG = "hidden from search";
 
+function getCacheControl(source: ProductSource): string {
+  if (source === "random_products") {
+    return "no-store, max-age=0";
+  }
+
+  if (source === "recently_purchased") {
+    return "public, max-age=300, stale-while-revalidate=300";
+  }
+
+  return "public, max-age=60, stale-while-revalidate=300";
+}
+
 const PRODUCTS_QUERY = `#graphql
   query DynamicSliderProducts($first: Int!) {
     products(first: $first, query: "status:active") {
@@ -527,7 +539,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     },
     {
       headers: {
-        "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+        "Cache-Control": getCacheControl(source),
       },
     },
   );
