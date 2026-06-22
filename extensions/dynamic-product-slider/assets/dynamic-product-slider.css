@@ -35,8 +35,8 @@
 .dynamic-product-slider__tabs {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-start;
-  gap: 0.7rem 1.5rem;
+  justify-content: center;
+  gap: 0.7rem 2.5rem;
   margin: 0 0 1.75rem;
 }
 
