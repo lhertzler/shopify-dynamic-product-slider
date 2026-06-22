@@ -101,7 +101,7 @@
   }
 
   function renderSkeleton(root) {
-    var track = root.querySelector("[data-dynamic-product-slider-track]");
+    var track = root.querySelector("[data-dps-track]");
     var config = getConfig(root);
     var count = Math.max(1, getItemsForCurrentViewport(config));
     var skeletons = [];
@@ -122,7 +122,7 @@
   }
 
   function renderEmpty(root) {
-    var track = root.querySelector("[data-dynamic-product-slider-track]");
+    var track = root.querySelector("[data-dps-track]");
 
     if (!track) {
       return;
@@ -135,8 +135,8 @@
   }
 
   function renderProducts(root, products) {
-    var viewport = root.querySelector("[data-dynamic-product-slider-viewport]");
-    var track = root.querySelector("[data-dynamic-product-slider-track]");
+    var viewport = root.querySelector("[data-dps-viewport]");
+    var track = root.querySelector("[data-dps-track]");
     var config = getConfig(root);
 
     if (!viewport || !track) {
@@ -220,13 +220,18 @@
   }
 
   function setActiveTab(root, source) {
-    var tabs = root.querySelectorAll("[data-dynamic-product-slider-tab]");
+    var tabs = root.querySelectorAll("[data-dps-tab]");
+    var select = root.querySelector("[data-dps-select]");
 
     tabs.forEach(function (tab) {
-      var isActive = tab.getAttribute("data-dynamic-product-slider-tab") === source;
+      var isActive = tab.getAttribute("data-dps-tab") === source;
       tab.classList.toggle("is-active", isActive);
       tab.setAttribute("aria-selected", isActive ? "true" : "false");
     });
+
+    if (select) {
+      select.value = source;
+    }
   }
 
   function loadSource(root, source) {
@@ -284,27 +289,35 @@
   }
 
   function bindTabs(root) {
-    var tabs = root.querySelectorAll("[data-dynamic-product-slider-tab]");
+    var tabs = root.querySelectorAll("[data-dps-tab]");
+    var select = root.querySelector("[data-dps-select]");
 
     tabs.forEach(function (tab) {
-      if (tab.getAttribute("data-dynamic-product-slider-tab-bound") === "true") {
+      if (tab._dynamicProductSliderBound) {
         return;
       }
 
-      tab.setAttribute("data-dynamic-product-slider-tab-bound", "true");
+      tab._dynamicProductSliderBound = true;
       tab.addEventListener("click", function () {
-        var source = tab.getAttribute("data-dynamic-product-slider-tab") || "manual";
+        var source = tab.getAttribute("data-dps-tab") || "manual";
         loadSource(root, source);
       });
     });
+
+    if (select && !select._dynamicProductSliderBound) {
+      select._dynamicProductSliderBound = true;
+      select.addEventListener("change", function () {
+        loadSource(root, select.value || "manual");
+      });
+    }
   }
 
   function init(root) {
-    if (!root || root.getAttribute("data-dynamic-product-slider-ready") === "true") {
+    if (!root || root._dynamicProductSliderReady) {
       return;
     }
 
-    root.setAttribute("data-dynamic-product-slider-ready", "true");
+    root._dynamicProductSliderReady = true;
 
     var config = getConfig(root);
     setGridVars(root, config);
@@ -313,7 +326,7 @@
   }
 
   function initAll() {
-    document.querySelectorAll("[data-dynamic-product-slider]").forEach(init);
+    document.querySelectorAll("[data-dps]").forEach(init);
   }
 
   if (document.readyState === "loading") {

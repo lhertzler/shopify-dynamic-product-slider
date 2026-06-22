@@ -18,7 +18,7 @@
 
 <div
   class="dynamic-product-slider"
-  data-dynamic-product-slider
+  data-dps
   data-initial-source="{{ initial_source | escape }}"
   data-limit="{{ block.settings.products_to_show }}"
   data-featured-collection="{% if block.settings.featured_collection != blank %}{{ block.settings.featured_collection.handle | escape }}{% endif %}"
@@ -39,14 +39,14 @@
       </header>
     {%- endif -%}
 
-    <div class="dynamic-product-slider__tabs" role="tablist" aria-label="Product sources" data-dynamic-product-slider-tabs>
+    <div class="dynamic-product-slider__tabs" role="tablist" aria-label="Product sources" data-dps-tabs>
       {%- if block.settings.enable_featured -%}
         <button
           type="button"
           class="dynamic-product-slider__tab{% if initial_source == 'featured' %} is-active{% endif %}"
           role="tab"
           aria-selected="{% if initial_source == 'featured' %}true{% else %}false{% endif %}"
-          data-dynamic-product-slider-tab="featured"
+          data-dps-tab="featured"
         >
           Featured
         </button>
@@ -58,7 +58,7 @@
           class="dynamic-product-slider__tab{% if initial_source == 'monthly_best_sellers' %} is-active{% endif %}"
           role="tab"
           aria-selected="{% if initial_source == 'monthly_best_sellers' %}true{% else %}false{% endif %}"
-          data-dynamic-product-slider-tab="monthly_best_sellers"
+          data-dps-tab="monthly_best_sellers"
         >
           Recent Best Sellers
         </button>
@@ -70,7 +70,7 @@
           class="dynamic-product-slider__tab{% if initial_source == 'recently_purchased' %} is-active{% endif %}"
           role="tab"
           aria-selected="{% if initial_source == 'recently_purchased' %}true{% else %}false{% endif %}"
-          data-dynamic-product-slider-tab="recently_purchased"
+          data-dps-tab="recently_purchased"
         >
           Just Purchased
         </button>
@@ -82,7 +82,7 @@
           class="dynamic-product-slider__tab{% if initial_source == 'random_products' %} is-active{% endif %}"
           role="tab"
           aria-selected="{% if initial_source == 'random_products' %}true{% else %}false{% endif %}"
-          data-dynamic-product-slider-tab="random_products"
+          data-dps-tab="random_products"
         >
           Random
         </button>
@@ -90,10 +90,32 @@
 
     </div>
 
-    <div class="dynamic-product-slider__viewport" data-dynamic-product-slider-viewport>
+    <label class="dynamic-product-slider__mobile-tabs" data-dps-mobile-tabs>
+      <span class="visually-hidden">Product source</span>
+      <select class="dynamic-product-slider__source-select" data-dps-select>
+        {%- if block.settings.enable_featured -%}
+          <option value="featured" {% if initial_source == 'featured' %}selected{% endif %}>Featured</option>
+        {%- endif -%}
+        {%- if block.settings.enable_monthly_best_sellers -%}
+          <option value="monthly_best_sellers" {% if initial_source == 'monthly_best_sellers' %}selected{% endif %}>
+            Recent Best Sellers
+          </option>
+        {%- endif -%}
+        {%- if block.settings.enable_recently_purchased -%}
+          <option value="recently_purchased" {% if initial_source == 'recently_purchased' %}selected{% endif %}>
+            Just Purchased
+          </option>
+        {%- endif -%}
+        {%- if block.settings.enable_random_products -%}
+          <option value="random_products" {% if initial_source == 'random_products' %}selected{% endif %}>Random</option>
+        {%- endif -%}
+      </select>
+    </label>
+
+    <div class="dynamic-product-slider__viewport" data-dps-viewport>
       <div
         class="dynamic-product-slider__track"
-        data-dynamic-product-slider-track
+        data-dps-track
       ></div>
     </div>
   </div>
